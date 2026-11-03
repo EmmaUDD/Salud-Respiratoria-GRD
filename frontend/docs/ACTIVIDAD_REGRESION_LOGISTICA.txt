@@ -1,0 +1,135 @@
+SURVIRAL — ACTIVIDAD DE REGRESIÓN LOGÍSTICA
+Propuesta didáctica implementada con DATOS FICTICIOS. No es un modelo sanitario validado.
+
+1. OBJETIVO
+Estimar la probabilidad de que uno de los 12 meses posteriores al corte tenga un conteo de
+hospitalizaciones respiratorias superior a un umbral histórico para la selección.
+La unidad de observación es un MES agregado, no un paciente.
+Seleccionar un diagnóstico permite estudiar su serie; no se predice el diagnóstico
+de una persona. No se calcula incidencia, riesgo individual ni capacidad hospitalaria.
+
+2. MÉTODO DE TRABAJO
+Pregunta -> validar cobertura y variables -> agregar eventos por mes -> dividir
+cronológicamente -> definir umbral solo con entrenamiento -> categorizar -> ajustar
+logística -> evaluar meses posteriores -> comunicar probabilidades y limitaciones.
+Conecta con agrupaciones, estadística descriptiva, regresión y comunicación del ramo.
+Logística y validación temporal se deben contrastar con las clases de la profesora;
+no se presentan como contenidos ya acreditados ni como acuerdos del equipo.
+
+3. VARIABLES Y CONVERSIÓN A CATEGORÍAS
+A) N_t: número de hospitalizaciones del mes objetivo. Cuantitativa discreta.
+   Se convierte en respuesta binaria Y_t:
+   - 1 = elevado si N_t > U.
+   - 0 = no elevado si N_t <= U.
+   U = percentil 75 de los conteos mensuales anteriores al período de evaluación,
+   con interpolación lineal entre posiciones. U puede no ser entero.
+   Es una definición estadística didáctica, NO un umbral clínico o de capacidad.
+
+B) Fecha/mes objetivo: se convierte en trimestre nominal:
+   - T1: enero–marzo; T2: abril–junio; T3: julio–septiembre; T4: octubre–diciembre.
+   Codificación con tres variables binarias T2, T3 y T4; T1 es la referencia.
+   No usar 1,2,3,4 como si la distancia entre categorías fuera un efecto lineal.
+
+C) N_(t-h): conteo del mes de origen para un horizonte h entre 1 y 12. Se convierte en categoría binaria:
+   elevado=1 si supera U; no elevado=0 en otro caso.
+D) N_(t-12): conteo del mismo mes del año anterior. Misma transformación.
+   Ambos conteos son conocidos en el origen t-h; no se usan meses futuros.
+
+Región, comuna, diagnóstico, grupo etario y sexo mantienen las categorías del dashboard
+y delimitan la población de eventos. NO son predictores del ajuste actual:
+se ajusta un modelo separado para cada selección. Incluye filtro comunal dependiente de la región con eventos ficticios.
+El año no se categoriza ni se incluye como predictor.
+Categorizar conteos pierde información; aquí ayuda a explicar variables binarias.
+Una alternativa futura es conservar los rezagos como variables numéricas.
+
+4. ECUACIÓN
+p_t = 1 / (1 + exp(-z_t))
+z_t = b0 + b1*T2 + b2*T3 + b3*T4 + b4*origen_elevado
+      + b5*mismo_mes_anterior_elevado.
+La logística no exige que todos los predictores sean categorías.
+Y_t es la respuesta binaria; p_t está entre 0 y 1.
+El conteo N_t NO se utiliza como predictor de su propio mes.
+
+5. FECHAS Y PREVENCIÓN DE FUGA DE INFORMACIÓN
+La fecha final seleccionada determina el último mes completo conocido.
+Si termina a mitad de mes, se usa el cierre del mes anterior.
+Se recupera historia desde enero de 2019; la fecha inicial de los gráficos
+no recorta el entrenamiento. Esto se explica en pantalla.
+Últimos 12 meses completos: objetivos de evaluación. Entrenamiento y cálculo
+de U terminan en el origen del primer objetivo, h meses antes de ese objetivo.
+Meses anteriores o iguales a ese origen: referencia del percentil. Primeros 12 meses: rezagos;
+desde el mes 13 hasta ese origen: filas de entrenamiento. Se excluyen h-1 meses
+entre el cierre de entrenamiento y el primer objetivo de evaluación.
+Se exigen 47+h meses completos mínimo (h=1: 48; h=12: 59),
+24 filas de entrenamiento y al menos
+cinco meses de cada clase en entrenamiento. Son guardas didácticas, NO una
+garantía de suficiencia estadística, independencia o validez de calibración.
+
+Ejemplo con corte diciembre 2024 y horizonte h=1:
+- Historia de conteos para definir U: enero 2019–diciembre 2023.
+- Filas de entrenamiento: enero 2020–diciembre 2023 (48).
+- Evaluación: enero–diciembre 2024 (12).
+- Estimación siguiente: enero 2025, sin conocer ni usar datos de ese mes.
+No es una predicción del próximo mes de la fecha actual de 2026.
+Los coeficientes se congelan al terminar entrenamiento. Para evaluar cada mes
+posterior se usan sus conteos conocidos en el origen t-h: evaluación directa a h meses,
+NO pronóstico simultáneo de todos los meses de evaluación.
+No se reajusta con evaluación para la siguiente estimación de esta actividad.
+
+6. AJUSTE LOCAL DE DEMOSTRACIÓN
+Se usa la misma fuente de eventos simulados que los gráficos, a través de un servicio.
+Ajuste determinista en src/mocks/logistic.ts; no servidor ni dependencias nuevas.
+Minimiza pérdida logística media + (0,05/2)*suma(b_j^2), sin penalizar intercepto.
+Regularización L2 provisional para evitar coeficientes ilimitados con separación
+en muestras pequeñas. Esto es un elemento adicional a justificar con la profesora.
+Alternativa académica: Logit sin penalización si cumple supuestos y converge;
+si no, informar el fallo, no forzar un resultado. No se usan estimadores lineales
+ordinarios para producir probabilidades fuera de [0,1].
+Descenso de gradiente con paso 0,4, máximo 8000 iteraciones y tolerancia 1e-6.
+Si no converge o falta alguna clase, no se muestra probabilidad.
+No hay valores p, intervalos ni inferencias causales calculadas.
+La pantalla solo consume el contrato; el backend futuro sustituirá este ajuste
+por un modelo reproducible, revisado y validado por el equipo de datos.
+
+7. EVALUACIÓN Y COMPROBACIÓN
+Corte de probabilidad inicial c=0,50: clasificar 1 si p>=c; 0 en otro caso.
+Es distinto de U, que define el resultado observado a partir de un conteo.
+El control permite c entre 0,20 y 0,80 con fin didáctico: no reajusta el modelo.
+No elegir el mejor corte con estos meses y luego afirmar que siguen siendo
+una prueba independiente. Para optimizarlo se necesita validación adicional.
+Se muestran TP, TN, FP y FN; su suma debe ser 12.
+Exactitud=(TP+TN)/12; precisión=TP/(TP+FP); sensibilidad=TP/(TP+FN).
+Denominador cero => no calculable, nunca cero inventado.
+Brier=promedio((p-Y)^2); menor es mejor, no es una prueba de calibración.
+Referencia: probabilidad constante igual a proporción de Y=1 en entrenamiento.
+Comparar Brier en exactamente los mismos meses de evaluación.
+No seleccionar entre diagnósticos por cuál obtiene mejor puntuación de prueba
+y después reportar esa puntuación como validación independiente.
+
+8. INTERFAZ Y ALCANCE
+Evolución temporal: selector de cualquiera de los 12 meses siguientes, probabilidad, período de entrenamiento/evaluación,
+umbral histórico, corte interactivo, gráfico de probabilidades vs clases observadas,
+métricas, tabla mensual, categorías, coeficientes y CSV rotulado como simulado.
+Filtros poco poblados producen estado de insuficiencia, no predicción fabricada.
+Las cifras no indican dónde deben asignarse camas ni prueban prevención efectiva.
+Para aplicación real: cobertura completa, fechas oportunas, definición diagnóstica,
+residencia vs atención, faltantes, pandemia, estabilidad temporal, incertidumbre,
+calibración, validación externa y revisión de utilidad por responsables sanitarios.
+La fuente simulada tiene patrones de estacionalidad construidos deliberadamente:
+un buen resultado en ella no demuestra capacidad predictiva sobre GRD real.
+
+9. FUENTES METODOLÓGICAS
+https://www.statsmodels.org/stable/generated/statsmodels.discrete.discrete_model.Logit.html
+https://otexts.com/fpp3/toolbox.html
+
+10. CONTINUACIÓN ACADÉMICA
+Primero explicar la definición de Y y construir manualmente dos filas mensuales.
+Después revisar codificación, entrenamiento y evaluación antes de interpretar
+los coeficientes. El archivo documenta la actividad; no reemplaza esa revisión.
+
+ACTUALIZACIÓN: COMUNAS Y HORIZONTES
+Ver COMUNAS_Y_HORIZONTES.md para trazabilidad del catálogo de 346 comunas,
+versión simulada demo-2-comunas, contrato por horizonte y ejemplo completo h=12.
+El trimestre sigue siendo una variable categórica. El conteo de origen y el del
+mismo mes del año anterior se convierten en elevado/no elevado con U.
+No se pronostica la cantidad de hospitalizaciones en esta actividad.

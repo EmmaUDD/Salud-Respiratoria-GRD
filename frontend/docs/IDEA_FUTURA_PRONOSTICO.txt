@@ -1,0 +1,29 @@
+SURVIRAL — IDEA RESERVADA: PRONÓSTICO DE CANTIDADES
+
+Pregunta: ¿cuántas hospitalizaciones por diagnóstico se esperan durante los meses
+posteriores al último dato completo disponible, por región o comuna validada?
+
+Resultado deseado: conteo estimado por mes y diagnóstico, con incertidumbre;
+comparación histórica, ranking de demanda esperada y contexto territorial.
+
+Modelo a evaluar: regresión para conteos/series temporales. Conservar la idea
+de una regresión con tendencia y estacionalidad como alternativa académica,
+sin elegir de antemano regresión lineal ordinaria: puede producir valores
+negativos o errores dependientes en el tiempo. Comparar primero con referencia
+estacional: mismo mes del año anterior. Elegir según datos, clases y validación.
+
+Esto es diferente de la actividad logística, que estima P(mes elevado), no conteos.
+No se implementa este pronóstico en la entrega actual.
+
+Antes de hacerlo: validar registros GRD completos, meses faltantes, diagnósticos,
+fecha de egreso, semántica del territorio y frecuencia suficiente por subgrupo.
+Con seis años hay como máximo 72 observaciones mensuales por serie; la
+desagregación por comuna/diagnóstico puede dejar muy pocos eventos.
+No confundir ranking por conteos esperados con riesgo individual o incidencia.
+La planificación de establecimientos necesita territorio de atención y capacidad;
+una región de residencia no identifica automáticamente el hospital requerido.
+Datos históricos hasta 2024 no permiten presentar resultados como alertas actuales
+de 2026 sin revisar actualización y validez temporal.
+
+Reparto propuesto: equipo de datos valida y ajusta; frontend visualiza resultados
+mediante servicios y contratos acordados. No se altera el backend desde frontend.

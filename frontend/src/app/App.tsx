@@ -6,7 +6,9 @@ import { FilterBar } from '../components/FilterBar.tsx';
 import { ErrorState, LoadingState } from '../components/AsyncState.tsx';
 import { OverviewScreen } from '../screens/OverviewScreen.tsx';
 import { MethodologyScreen } from '../screens/MethodologyScreen.tsx';
-import { PlannedScreen, plannedViews, type PlannedView } from '../screens/PlannedScreen.tsx';
+import { plannedViews, type PlannedView } from '../screens/PlannedScreen.tsx';
+import { ExploreScreen } from '../screens/ExploreScreen.tsx';
+import { EnvironmentScreen } from '../screens/EnvironmentScreen.tsx';
 import { defaultFilters } from './defaults.ts';
 
 type View = 'overview' | 'methodology' | PlannedView;
@@ -25,6 +27,7 @@ export default function App() {
   const [view, setView] = useState<View>(readView);
   const [menuOpen, setMenuOpen] = useState(false);
   const [filters, setFilters] = useState<Filters>({ ...defaultFilters });
+  const [forecastHorizon, setForecastHorizon] = useState(1);
   const [options, setOptions] = useState<FilterOptions | null>(null);
   const [optionsError, setOptionsError] = useState('');
   const [request, setRequest] = useState<Request>({ status: 'loading' });
@@ -66,11 +69,11 @@ export default function App() {
       <header className="topbar"><div className="topbar-left"><button className="icon-button mobile-menu" aria-label={menuOpen ? 'Cerrar navegación' : 'Abrir navegación'} aria-expanded={menuOpen} onClick={() => setMenuOpen(!menuOpen)}>{menuOpen ? <X size={22} /> : <Menu size={22} />}</button><span className="breadcrumb">Surviral<span>/</span><strong>Explorador respiratorio</strong></span></div><div className="topbar-right"><span className="demo-badge"><FlaskConical size={14} />Datos simulados</span><button className="icon-button help-button" aria-label="Consultar metodología y fuentes" onClick={() => go('methodology')}><CircleHelp size={20} /></button></div></header>
       <main id="main-content" className="main-content">
         <div className="page-heading"><div><span className="eyebrow">HOSPITALIZACIONES RESPIRATORIAS EN CHILE</span><h1>{title}</h1><p>{question}</p></div><button className="button heading-method" onClick={() => go(view === 'methodology' ? 'overview' : 'methodology')}>{view === 'methodology' ? 'Volver al panorama' : 'Acerca de los datos'}<ArrowUpRight size={16} /></button></div>
-        <div className="demo-notice"><FlaskConical size={18} /><p><strong>Estás explorando una demostración.</strong> Todas las cifras son ficticias. No representan resultados del proyecto ni conclusiones sobre la salud en Chile.</p></div>
-        {view === 'overview' ? <>
+        <div className="demo-notice"><FlaskConical size={18} /><p><strong>Modelo en desarrollo.</strong></p></div>
+        {view !== 'methodology' && view !== 'environment' ? <>
           {options && <FilterBar filters={filters} options={options} onChange={setFilters} reset={reset} />}
-          {optionsError ? <ErrorState message={optionsError} retry={() => setAttempt(attempt + 1)} /> : request.status === 'loading' || !options ? <LoadingState /> : request.status === 'error' ? <ErrorState message={request.message} retry={() => setAttempt(attempt + 1)} /> : <OverviewScreen data={request.data} reset={reset} methodology={() => go('methodology')} territory={() => go('territory')} />}
-        </> : view === 'methodology' ? <MethodologyScreen /> : <PlannedScreen view={view} back={() => go('overview')} />}
+          {optionsError ? <ErrorState message={optionsError} retry={() => setAttempt(attempt + 1)} /> : request.status === 'loading' || !options ? <LoadingState /> : request.status === 'error' ? <ErrorState message={request.message} retry={() => setAttempt(attempt + 1)} /> : view === 'overview' ? <OverviewScreen data={request.data} reset={reset} methodology={() => go('methodology')} regions={options.regions} onRegion={region => setFilters(f => ({...f,region,commune: 'all'}))} /> : <ExploreScreen horizon={forecastHorizon} onHorizon={setForecastHorizon} view={view} data={request.data} options={options} onRegion={region => setFilters(f=>({...f,region,commune: 'all'}))} reset={reset}/>}
+        </> : view === 'methodology' ? <MethodologyScreen /> : <EnvironmentScreen />}
         <footer className="page-footer"><span>Surviral · Análisis de Datos e Inferencia Estadística</span><span>2019–2024 · cobertura de demostración</span></footer>
       </main>
     </div>

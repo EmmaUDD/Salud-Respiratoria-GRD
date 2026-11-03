@@ -5,6 +5,7 @@ export interface Filters {
   startDate: string;
   endDate: string;
   region: string;
+  commune: string;
   age: AgeGroup;
   sex: 'all' | Sex;
   diagnosis: string;
@@ -15,6 +16,7 @@ export interface FilterOptions {
   maxDate: string;
   years: number[];
   regions: Option[];
+  communes: (Option & { region: string })[];
   ages: Option[];
   sexes: Option[];
   diagnoses: Option[];
@@ -62,10 +64,12 @@ export interface Overview {
   monthly: TimePoint[];
   diagnoses: CategoryValue[];
   territories: CategoryValue[];
+  regionalMonthly: { id: string; label: string; points: TimePoint[] }[];
   demographics: { age: CategoryValue[]; sex: CategoryValue[] };
   meta: SourceMetadata;
 }
 export interface DashboardService {
   getFilterOptions(signal?: AbortSignal): Promise<FilterOptions>;
   getOverview(filters: Filters, signal?: AbortSignal): Promise<Overview>;
+  getLogisticPreview(filters: Filters, horizon: number, signal?: AbortSignal): Promise<import('./logistic.ts').LogisticPreview>;
 }
