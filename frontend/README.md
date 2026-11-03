@@ -37,7 +37,7 @@ La compilación crea `dist/`; para compartirla se debe servir esa carpeta median
 - Mapa interactivo de las 16 regiones en panorama y territorio, con islas en recuadros; geometría referencial sin territorio antártico.
 - Territorio: comparación, tabla y mapa de calor región × mes. Evolución: comparación mensual entre años y serie cronológica. Perfil: edad, sexo y diagnósticos.
 - Ambiente y vacunación: paneles de disponibilidad y requisitos de integración; todavía sin fuentes conectadas.
-- Evolución temporal incluye una actividad logística funcional con datos ficticios: probabilidad de superar un umbral mensual, evaluación temporal y corte de clasificación interactivo. Variables y método en `docs/ACTIVIDAD_REGRESION_LOGISTICA.txt`; pronóstico de cantidades reservado en `docs/IDEA_FUTURA_PRONOSTICO.txt`.
+- Evolución temporal incluye una actividad logística funcional con datos ficticios: selector de los 12 meses posteriores al corte, filtros de región y comuna, probabilidad de superar un umbral mensual, evaluación temporal y corte de clasificación interactivo. Variables y método en `docs/ACTIVIDAD_REGRESION_LOGISTICA.txt`; pronóstico de cantidades reservado en `docs/IDEA_FUTURA_PRONOSTICO.txt`.
 
 Fecha de referencia provisional: egreso. Geografía: residencia simulada. El filtro de diagnóstico solo modifica el numerador respiratorio del porcentaje. Estas definiciones deben validarse antes de conectar datos reales.
 
@@ -60,3 +60,5 @@ Todo el trabajo de frontend se mantiene dentro de esta carpeta. La limpieza real
 ## Dependencias
 
 React y TypeScript para componentes y contratos; Vite para desarrollo/compilación; Recharts para el gráfico mensual; Lucide para iconos. CSS propio, sin framework visual, sin servidor de datos simulado y sin biblioteca global de estado.
+
+Catálogo territorial, simulación comunal y evaluación por horizonte: `docs/COMUNAS_Y_HORIZONTES.md`.

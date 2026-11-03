@@ -13,5 +13,5 @@ function wait(signal?: AbortSignal): Promise<void> {
 export const mockService: DashboardService = {
   async getFilterOptions(signal) { await wait(signal); return structuredClone(filterOptions); },
   async getOverview(filters, signal) { await wait(signal); return summarize(filters); },
-  async getLogisticPreview(filters, signal) { await wait(signal); if(signal?.aborted) throw new DOMException('Consulta cancelada','AbortError'); return logisticPreview(filters); },
+  async getLogisticPreview(filters, horizon, signal) { await wait(signal); if(signal?.aborted) throw new DOMException('Consulta cancelada','AbortError'); return logisticPreview(filters, undefined, horizon); },
 };

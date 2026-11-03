@@ -27,6 +27,7 @@ export default function App() {
   const [view, setView] = useState<View>(readView);
   const [menuOpen, setMenuOpen] = useState(false);
   const [filters, setFilters] = useState<Filters>({ ...defaultFilters });
+  const [forecastHorizon, setForecastHorizon] = useState(1);
   const [options, setOptions] = useState<FilterOptions | null>(null);
   const [optionsError, setOptionsError] = useState('');
   const [request, setRequest] = useState<Request>({ status: 'loading' });
@@ -71,7 +72,7 @@ export default function App() {
         <div className="demo-notice"><FlaskConical size={18} /><p><strong>Modelo en desarrollo.</strong></p></div>
         {view !== 'methodology' && view !== 'environment' ? <>
           {options && <FilterBar filters={filters} options={options} onChange={setFilters} reset={reset} />}
-          {optionsError ? <ErrorState message={optionsError} retry={() => setAttempt(attempt + 1)} /> : request.status === 'loading' || !options ? <LoadingState /> : request.status === 'error' ? <ErrorState message={request.message} retry={() => setAttempt(attempt + 1)} /> : view === 'overview' ? <OverviewScreen data={request.data} reset={reset} methodology={() => go('methodology')} regions={options.regions} onRegion={region => setFilters(f => ({...f,region}))} /> : <ExploreScreen view={view} data={request.data} options={options} onRegion={region => setFilters(f=>({...f,region}))} reset={reset}/>}
+          {optionsError ? <ErrorState message={optionsError} retry={() => setAttempt(attempt + 1)} /> : request.status === 'loading' || !options ? <LoadingState /> : request.status === 'error' ? <ErrorState message={request.message} retry={() => setAttempt(attempt + 1)} /> : view === 'overview' ? <OverviewScreen data={request.data} reset={reset} methodology={() => go('methodology')} regions={options.regions} onRegion={region => setFilters(f => ({...f,region,commune: 'all'}))} /> : <ExploreScreen horizon={forecastHorizon} onHorizon={setForecastHorizon} view={view} data={request.data} options={options} onRegion={region => setFilters(f=>({...f,region,commune: 'all'}))} reset={reset}/>}
         </> : view === 'methodology' ? <MethodologyScreen /> : <EnvironmentScreen />}
         <footer className="page-footer"><span>Surviral · Análisis de Datos e Inferencia Estadística</span><span>2019–2024 · cobertura de demostración</span></footer>
       </main>

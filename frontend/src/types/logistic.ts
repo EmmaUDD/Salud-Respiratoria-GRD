@@ -5,7 +5,8 @@ export interface LogisticPoint {
   observed: 0 | 1;
   probability: number;
   quarter: number;
-  previousHigh: 0 | 1;
+  originHigh: 0 | 1;
+  originPeriod: string;
   seasonalHigh: 0 | 1;
 }
 /** Propuesta de contrato; no es un acuerdo aprobado por el backend. */
@@ -13,6 +14,8 @@ export type LogisticPreview = {
   mode: 'simulated';
   filters: Filters;
   cutoff: string;
+  horizon: number;
+  targetPeriod: string;
   omittedPartialMonth: boolean;
 } & ({ status: 'unavailable'; reason: string } | {
   status: 'ready';

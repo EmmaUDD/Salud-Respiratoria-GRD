@@ -1,9 +1,12 @@
 import type { FilterOptions, Option, Sex } from '../types/dashboard.ts';
+import communeCatalog from '../assets/communes.json' with { type: 'json' };
+export const communes = communeCatalog;
 
 export interface SimulatedEvent {
   id: string;
   dischargeDate: string;
   region: string;
+  commune: string;
   age: number | null;
   sex: Sex;
   respiratory: boolean;
@@ -30,7 +33,7 @@ export const diagnoses: Option[] = [
 
 export const filterOptions: FilterOptions = {
   minDate: '2019-01-01', maxDate: '2024-12-31', years: [2019, 2020, 2021, 2022, 2023, 2024],
-  regions,
+  regions, communes,
   ages: [
     { id: 'under18', label: 'Menores de 18 años' },
     { id: '18to64', label: '18–64 años' },
@@ -48,14 +51,16 @@ function createEvents(): SimulatedEvent[] {
   for (let year = 2019; year <= 2024; year++) {
     for (let month = 1; month <= 12; month++) {
       regions.forEach((region, r) => {
-        const count = 5 + ((r * 3 + year) % 5) + season[month - 1];
+        communes.filter(c => c.region === region.id).forEach((commune, c) => {
+        const count = 5 + ((r * 3 + c + year) % 5) + season[month - 1];
         for (let i = 0; i < count; i++) {
-          const key = (year - 2018) * 7919 + month * 317 + r * 71 + i * 37;
+          const key = (year - 2018) * 7919 + month * 317 + r * 71 + c * 41 + i * 37;
           const respiratory = key % 100 < 31 + season[month - 1] * 5;
           result.push({
-            id: `demo-${year}-${month}-${region.id}-${i}`,
+            id: `demo-${year}-${month}-${commune.id}-${i}`,
             dischargeDate: `${year}-${String(month).padStart(2, '0')}-${String(2 + key % 26).padStart(2, '0')}`,
             region: region.id,
+            commune: commune.id,
             age: key % 23 === 0 ? null : (key * 7) % 96,
             sex: key % 31 === 0 ? 'unknown' : key % 2 === 0 ? 'female' : 'male',
             respiratory,
@@ -63,6 +68,7 @@ function createEvents(): SimulatedEvent[] {
             stayDays: key % 17 === 0 ? null : (key * 3) % 13,
           });
         }
+        });
       });
     }
   }

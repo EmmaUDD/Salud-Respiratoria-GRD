@@ -58,7 +58,7 @@ test('Conteo cero no se confunde con mediana o proporción no calculables', () =
 });
 
 test('Una mediana usa eventos originales y conserva estancias de cero días', () => {
-  const base: SimulatedEvent = { id: 'a', dischargeDate: '2024-02-15', region: '13', age: null, sex: 'unknown', respiratory: true, diagnosis: 'asthma', stayDays: 0 };
+  const base: SimulatedEvent = { id: 'a', dischargeDate: '2024-02-15', region: '13', commune: '13101', age: null, sex: 'unknown', respiratory: true, diagnosis: 'asthma', stayDays: 0 };
   const source = [base, { ...base, id: 'b', stayDays: 8 }, { ...base, id: 'c', stayDays: null }];
   const data = summarize(defaultFilters, source);
   assert.equal(data.indicators.medianStay.value, 4);
@@ -95,4 +95,18 @@ test('El servicio permite cancelar consultas y propaga errores de validación', 
   controller.abort();
   await assert.rejects(pending, { name: 'AbortError' });
   await assert.rejects(mockService.getOverview({ ...defaultFilters, region: 'fake' }), /Territorio no disponible/);
+});
+
+test('Catálogo comunal, coherencia de región/comuna y reconciliación con los eventos',()=>{
+  assert.equal(filterOptions.communes.length,346);
+  assert.equal(new Set(filterOptions.communes.map(c=>c.id)).size,346);
+  const communes=new Map(filterOptions.communes.map(c=>[c.id,c.region]));
+  for(const e of events) assert.equal(communes.get(e.commune),e.region);
+  const r=summarize({...defaultFilters,region:'13'});
+  const byCommune=filterOptions.communes.filter(c=>c.region==='13').map(c=>summarize({...defaultFilters,region:'13',commune:c.id}));
+  assert.equal(byCommune.reduce((sum,d)=>sum+d.meta.respiratoryTotal,0),r.meta.respiratoryTotal);
+  for(const d of byCommune)assert.equal(d.meta.respiratoryTotal,events.filter(e=>e.respiratory&&e.commune===d.meta.appliedFilters.commune&&e.dischargeDate>='2024-01-01'&&e.dischargeDate<='2024-12-31').length);
+  assert.throws(()=>validateFilters({...defaultFilters,region:'01',commune:'13101'}));
+  assert.throws(()=>validateFilters({...defaultFilters,commune:'13101'}));
+  assert.throws(()=>validateFilters({...defaultFilters,region:'13',commune:'fake'}));
 });

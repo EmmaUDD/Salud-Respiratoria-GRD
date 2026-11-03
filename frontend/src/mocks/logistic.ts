@@ -2,6 +2,7 @@ import { summarize, validateFilters } from './aggregate.ts';
 import { events, type SimulatedEvent } from './data.ts';
 import type { Filters } from '../types/dashboard.ts';
 import type { LogisticPoint, LogisticPreview } from '../types/logistic.ts';
+import { addMonths } from '../utils/months.ts';
 
 export const sigmoid = (z: number) => 1 / (1 + Math.exp(-Math.max(-35, Math.min(35, z))));
 const dot = (a: number[], b: number[]) => a.reduce((sum, v, i) => sum + v * b[i], 0);
@@ -22,42 +23,43 @@ export function fitBinary(x: number[][], y: number[]): {weights:number[]; conver
   }
   return {weights,converged:false};
 }
-const featureLabels=['Intercepto','Trimestre 2 (vs. T1)','Trimestre 3 (vs. T1)','Trimestre 4 (vs. T1)','Mes anterior elevado','Mismo mes del año anterior elevado'];
-function features(period:string, previous:number, seasonal:number, threshold:number) {
+const featureLabels=['Intercepto','Trimestre 2 (vs. T1)','Trimestre 3 (vs. T1)','Trimestre 4 (vs. T1)','Mes de origen elevado','Mismo mes del año anterior elevado'];
+function features(period:string, origin:number, seasonal:number, threshold:number) {
   const quarter=Math.ceil(Number(period.slice(5))/3);
-  const previousHigh=previous>threshold?1:0, seasonalHigh=seasonal>threshold?1:0;
-  return { quarter, previousHigh, seasonalHigh, x:[1,Number(quarter===2),Number(quarter===3),Number(quarter===4),previousHigh,seasonalHigh] } as const;
+  const originHigh=origin>threshold?1:0, seasonalHigh=seasonal>threshold?1:0;
+  return { quarter, originHigh, seasonalHigh, x:[1,Number(quarter===2),Number(quarter===3),Number(quarter===4),originHigh,seasonalHigh] } as const;
 }
-function nextMonth(period:string):string {
-  const date=new Date(`${period}-01T00:00:00Z`);date.setUTCMonth(date.getUTCMonth()+1);return date.toISOString().slice(0,7);
-}
-export function logisticPreview(filters:Filters, source:readonly SimulatedEvent[]=events):LogisticPreview {
+export function logisticPreview(filters:Filters, source:readonly SimulatedEvent[]=events, horizon=1):LogisticPreview {
   validateFilters(filters);
+  if(!Number.isInteger(horizon)||horizon<1||horizon>12)throw new Error('El horizonte debe ser un número entero entre 1 y 12 meses.');
   const end=new Date(`${filters.endDate}T00:00:00Z`);
   const monthEnd=new Date(Date.UTC(end.getUTCFullYear(),end.getUTCMonth()+1,0)).toISOString().slice(0,10);
   const partial=filters.endDate!==monthEnd;
   if(partial) end.setUTCDate(0);
   const cutoff=end.toISOString().slice(0,10);
-  const base={mode:'simulated' as const,filters:{...filters},cutoff,omittedPartialMonth:partial};
+  const base={mode:'simulated' as const,filters:{...filters},cutoff,horizon,targetPeriod:addMonths(cutoff.slice(0,7),horizon),omittedPartialMonth:partial};
   const unavailable=(reason:string):LogisticPreview=>({...base,status:'unavailable',reason});
   if(cutoff<'2019-01-01')return unavailable('No hay meses completos anteriores a la fecha de corte.');
   // Deliberately use full pre-cutoff history; the chart's start date is not training truncation.
   const monthly=summarize({...filters,startDate:'2019-01-01',endDate:cutoff},source).monthly;
-  if(monthly.length<48)return unavailable('Se necesitan al menos 48 meses completos: 12 para rezagos, 24 para entrenamiento y 12 para evaluación. Amplía la fecha final a diciembre de 2022 o después.');
+  if(monthly.length<47+horizon)return unavailable(`Este horizonte de ${horizon} meses necesita al menos ${47+horizon} meses completos: rezagos, separación temporal, 24 filas de entrenamiento y 12 de evaluación. Amplía la fecha final o reduce el horizonte.`);
   const split=monthly.length-12;
   const counts=monthly.map(p=>p.value!);
-  const threshold=quantile75(counts.slice(0,split));
-  const train=monthly.slice(12,split).map((p,j)=>({f:features(p.period,counts[j+11],counts[j],threshold),y:Number(counts[j+12]>threshold)}));
+  // Last training target must already be observed at the FIRST evaluation origin.
+  // Otherwise h>1 would train with months that are still future at that origin.
+  const lastTrain=split-horizon;
+  const threshold=quantile75(counts.slice(0,lastTrain+1));
+  const train=monthly.slice(12,lastTrain+1).map((p,j)=>({f:features(p.period,counts[j+12-horizon],counts[j],threshold),y:Number(counts[j+12]>threshold)}));
   const positives=train.reduce((sum,r)=>sum+r.y,0);
   if(positives<5 || train.length-positives<5)return unavailable('La selección tiene menos de cinco meses de alguna clase en entrenamiento. Amplía territorio, edad, sexo o diagnóstico. No se calcula una probabilidad con esta selección.');
   const model=fitBinary(train.map(r=>[...r.f.x]),train.map(r=>r.y));
   if(!model.converged)return unavailable('El ajuste de demostración no convergió. No se muestran probabilidades de este ajuste.');
-  const prediction=(i:number,period:string)=>{const f=features(period,counts[i-1],counts[i-12],threshold);return {period,quarter:f.quarter,previousHigh:f.previousHigh,seasonalHigh:f.seasonalHigh,probability:sigmoid(dot(model.weights,[...f.x]))};};
-  // Frozen coefficients and training threshold. Each held-out month only sees preceding counts.
+  const prediction=(i:number,period:string)=>{const f=features(period,counts[i-horizon],counts[i-12],threshold);return {period,originPeriod:addMonths(period,-horizon),quarter:f.quarter,originHigh:f.originHigh,seasonalHigh:f.seasonalHigh,probability:sigmoid(dot(model.weights,[...f.x]))};};
+  // Frozen coefficients; direct h-month predictions from origins at t-h, not t-1.
   const test:LogisticPoint[]=monthly.slice(split).map((p,j)=>({...prediction(split+j,p.period),count:counts[split+j],observed:counts[split+j]>threshold?1:0}));
   const baseline=positives/train.length;
   const brier=test.reduce((sum,p)=>sum+(p.probability-p.observed)**2,0)/test.length;
   const baselineBrier=test.reduce((sum,p)=>sum+(baseline-p.observed)**2,0)/test.length;
-  return {...base,status:'ready',countThreshold:threshold,trainStart:monthly[12].period,trainEnd:monthly[split-1].period,trainSize:train.length,trainPositive:positives,testStart:test[0].period,testEnd:test.at(-1)!.period,test,baselineProbability:baseline,brier,baselineBrier,next:prediction(counts.length,nextMonth(monthly.at(-1)!.period)),coefficients:featureLabels.map((label,i)=>({label,value:model.weights[i]}))};
+  return {...base,status:'ready',countThreshold:threshold,trainStart:monthly[12].period,trainEnd:monthly[lastTrain].period,trainSize:train.length,trainPositive:positives,testStart:test[0].period,testEnd:test.at(-1)!.period,test,baselineProbability:baseline,brier,baselineBrier,next:prediction(counts.length-1+horizon,base.targetPeriod),coefficients:featureLabels.map((label,i)=>({label,value:model.weights[i]}))};
 }
 

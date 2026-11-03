@@ -4,6 +4,7 @@ import { logisticPreview, sigmoid, fitBinary, quantile75 } from '../src/mocks/lo
 import { classificationMetrics } from '../src/utils/classification.ts';
 import { events } from '../src/mocks/data.ts';
 import { defaultFilters } from '../src/app/defaults.ts';
+import { addMonths } from '../src/utils/months.ts';
 
 test('Ajuste logístico devuelve probabilidades reproducibles y evalúa meses posteriores',()=>{
   const result=logisticPreview(defaultFilters);
@@ -54,4 +55,35 @@ test('La penalización permite ajuste finito de una muestra separable sin coefic
   assert.ok(fit.converged);assert.ok(fit.weights.every(Number.isFinite));
   assert.ok(sigmoid(fit.weights[0])<.5);assert.ok(sigmoid(fit.weights[0]+fit.weights[1])>.5);
   assert.equal(quantile75([0,10,20,30]),22.5);
+});
+
+test('Los doce horizontes se ajustan y evalúan sin entrenar después del primer origen',()=>{
+  for(let h=1;h<=12;h++){
+    const result=logisticPreview(defaultFilters,undefined,h);
+    assert.equal(result.status,'ready');if(result.status!=='ready')continue;
+    assert.equal(result.targetPeriod,`2025-${String(h).padStart(2,'0')}`);
+    assert.equal(result.next.originPeriod,'2024-12');
+    assert.equal(result.trainEnd,addMonths(result.testStart,-h));
+    assert.equal(result.trainSize,49-h);
+    for(const p of result.test) assert.equal(p.originPeriod,addMonths(p.period,-h));
+  }
+  for(const h of [0,13,1.5,NaN])assert.throws(()=>logisticPreview(defaultFilters,undefined,h));
+});
+test('Horizonte doce no usa conteos posteriores al primer origen para entrenar ni para su primera estimación',()=>{
+  const base=logisticPreview(defaultFilters,undefined,12);
+  const changed=logisticPreview(defaultFilters,events.filter(e=>e.dischargeDate<'2023-02-01'),12);
+  assert.equal(base.status,'ready');assert.equal(changed.status,'ready');
+  if(base.status!=='ready'||changed.status!=='ready')return;
+  assert.equal(base.countThreshold,changed.countThreshold);
+  assert.deepEqual(base.coefficients,changed.coefficients);
+  assert.equal(base.test[0].probability,changed.test[0].probability);
+});
+test('Predicción comunal usa su propia población y el horizonte solicitado',()=>{
+  const region=logisticPreview({...defaultFilters,region:'13'},undefined,6);
+  const commune=logisticPreview({...defaultFilters,region:'13',commune:'13101'},undefined,6);
+  assert.equal(region.status,'ready');assert.equal(commune.status,'ready');
+  if(region.status==='ready'&&commune.status==='ready'){
+    assert.ok(region.countThreshold>commune.countThreshold);
+    assert.equal(commune.next.period,'2025-06');assert.equal(commune.filters.commune,'13101');
+  }
 });

@@ -2,7 +2,7 @@ SURVIRAL — ACTIVIDAD DE REGRESIÓN LOGÍSTICA
 Propuesta didáctica implementada con DATOS FICTICIOS. No es un modelo sanitario validado.
 
 1. OBJETIVO
-Estimar la probabilidad de que el próximo mes completo tenga un conteo de
+Estimar la probabilidad de que uno de los 12 meses posteriores al corte tenga un conteo de
 hospitalizaciones respiratorias superior a un umbral histórico para la selección.
 La unidad de observación es un MES agregado, no un paciente.
 Seleccionar un diagnóstico permite estudiar su serie; no se predice el diagnóstico
@@ -30,21 +30,21 @@ B) Fecha/mes objetivo: se convierte en trimestre nominal:
    Codificación con tres variables binarias T2, T3 y T4; T1 es la referencia.
    No usar 1,2,3,4 como si la distancia entre categorías fuera un efecto lineal.
 
-C) N_(t-1): conteo del mes anterior. Se convierte en categoría binaria:
+C) N_(t-h): conteo del mes de origen para un horizonte h entre 1 y 12. Se convierte en categoría binaria:
    elevado=1 si supera U; no elevado=0 en otro caso.
 D) N_(t-12): conteo del mismo mes del año anterior. Misma transformación.
-   Ambos rezagos son conocidos antes del mes objetivo.
+   Ambos conteos son conocidos en el origen t-h; no se usan meses futuros.
 
-Región, diagnóstico, grupo etario y sexo mantienen las categorías del dashboard
+Región, comuna, diagnóstico, grupo etario y sexo mantienen las categorías del dashboard
 y delimitan la población de eventos. NO son predictores del ajuste actual:
-se ajusta un modelo separado para cada selección. No incluye comunas.
+se ajusta un modelo separado para cada selección. Incluye filtro comunal dependiente de la región con eventos ficticios.
 El año no se categoriza ni se incluye como predictor.
 Categorizar conteos pierde información; aquí ayuda a explicar variables binarias.
 Una alternativa futura es conservar los rezagos como variables numéricas.
 
 4. ECUACIÓN
 p_t = 1 / (1 + exp(-z_t))
-z_t = b0 + b1*T2 + b2*T3 + b3*T4 + b4*anterior_elevado
+z_t = b0 + b1*T2 + b2*T3 + b3*T4 + b4*origen_elevado
       + b5*mismo_mes_anterior_elevado.
 La logística no exige que todos los predictores sean categorías.
 Y_t es la respuesta binaria; p_t está entre 0 y 1.
@@ -55,21 +55,24 @@ La fecha final seleccionada determina el último mes completo conocido.
 Si termina a mitad de mes, se usa el cierre del mes anterior.
 Se recupera historia desde enero de 2019; la fecha inicial de los gráficos
 no recorta el entrenamiento. Esto se explica en pantalla.
-Últimos 12 meses completos: evaluación, nunca ajuste ni cálculo de U.
-Meses anteriores: referencia del percentil. Primeros 12 meses: rezagos;
-desde el mes 13 hasta antes de evaluación: filas de entrenamiento.
-Se exigen 48 meses completos mínimo, 24 filas de entrenamiento y al menos
+Últimos 12 meses completos: objetivos de evaluación. Entrenamiento y cálculo
+de U terminan en el origen del primer objetivo, h meses antes de ese objetivo.
+Meses anteriores o iguales a ese origen: referencia del percentil. Primeros 12 meses: rezagos;
+desde el mes 13 hasta ese origen: filas de entrenamiento. Se excluyen h-1 meses
+entre el cierre de entrenamiento y el primer objetivo de evaluación.
+Se exigen 47+h meses completos mínimo (h=1: 48; h=12: 59),
+24 filas de entrenamiento y al menos
 cinco meses de cada clase en entrenamiento. Son guardas didácticas, NO una
 garantía de suficiencia estadística, independencia o validez de calibración.
 
-Con corte diciembre 2024:
+Ejemplo con corte diciembre 2024 y horizonte h=1:
 - Historia de conteos para definir U: enero 2019–diciembre 2023.
 - Filas de entrenamiento: enero 2020–diciembre 2023 (48).
 - Evaluación: enero–diciembre 2024 (12).
 - Estimación siguiente: enero 2025, sin conocer ni usar datos de ese mes.
 No es una predicción del próximo mes de la fecha actual de 2026.
 Los coeficientes se congelan al terminar entrenamiento. Para evaluar cada mes
-posterior se usan sus rezagos ya observados: evaluación secuencial de un paso,
+posterior se usan sus conteos conocidos en el origen t-h: evaluación directa a h meses,
 NO pronóstico simultáneo de todos los meses de evaluación.
 No se reajusta con evaluación para la siguiente estimación de esta actividad.
 
@@ -104,7 +107,7 @@ No seleccionar entre diagnósticos por cuál obtiene mejor puntuación de prueba
 y después reportar esa puntuación como validación independiente.
 
 8. INTERFAZ Y ALCANCE
-Evolución temporal: probabilidad siguiente, período de entrenamiento/evaluación,
+Evolución temporal: selector de cualquiera de los 12 meses siguientes, probabilidad, período de entrenamiento/evaluación,
 umbral histórico, corte interactivo, gráfico de probabilidades vs clases observadas,
 métricas, tabla mensual, categorías, coeficientes y CSV rotulado como simulado.
 Filtros poco poblados producen estado de insuficiencia, no predicción fabricada.
@@ -123,3 +126,10 @@ https://otexts.com/fpp3/toolbox.html
 Primero explicar la definición de Y y construir manualmente dos filas mensuales.
 Después revisar codificación, entrenamiento y evaluación antes de interpretar
 los coeficientes. El archivo documenta la actividad; no reemplaza esa revisión.
+
+ACTUALIZACIÓN: COMUNAS Y HORIZONTES
+Ver COMUNAS_Y_HORIZONTES.md para trazabilidad del catálogo de 346 comunas,
+versión simulada demo-2-comunas, contrato por horizonte y ejemplo completo h=12.
+El trimestre sigue siendo una variable categórica. El conteo de origen y el del
+mismo mes del año anterior se convierten en elevado/no elevado con U.
+No se pronostica la cantidad de hospitalizaciones en esta actividad.
