@@ -1,6 +1,6 @@
 # Frontend de Surviral
 
-Primera pantalla funcional del explorador de hospitalizaciones respiratorias. Toda la información es ficticia y se calcula desde una misma fuente determinista. No se leen los archivos GRD del repositorio.
+Explorador de hospitalizaciones respiratorias con vistas territoriales, temporales, demográficas y de vacunación. Todas las cifras son ficticias; cada área usa una fuente determinista y sus gráficos reconcilian entre sí. No se leen los archivos GRD del repositorio.
 
 ## Ejecutar en tu computador
 
@@ -35,11 +35,11 @@ La compilación crea `dist/`; para compartirla se debe servir esa carpeta median
 - Tabla accesible y descarga CSV de la serie, identificada como simulada.
 - Vista de metodología y fuentes.
 - Mapa interactivo de las 16 regiones en panorama y territorio, con islas en recuadros; geometría referencial sin territorio antártico.
-- Territorio: comparación, tabla y mapa de calor región × mes. Evolución: comparación mensual entre años y serie cronológica. Perfil: edad, sexo y diagnósticos.
-- Ambiente y vacunación: paneles de disponibilidad y requisitos de integración; todavía sin fuentes conectadas.
+- Territorio: mapa ampliable con 344 polígonos comunales, catálogo de 346 comunas, búsqueda y selección múltiple entre regiones; comparación, tabla y mapa de calor región × mes. Evolución: mapa de calor año × mes, comparación mensual entre años y serie cronológica. Perfil: edad, sexo y diagnósticos.
+- Vacunación respiratoria: serie mensual, comparación regional y filtros independientes de campaña 2024/2025 y región; cifras ficticias, cobertura no calculada sin denominador. Ambiente fuera de esta versión.
 - Evolución temporal incluye una actividad logística funcional con datos ficticios: selector de los 12 meses posteriores al corte, filtros de región y comuna, probabilidad de superar un umbral mensual, evaluación temporal y corte de clasificación interactivo. Variables y método en `docs/ACTIVIDAD_REGRESION_LOGISTICA.txt`; pronóstico de cantidades reservado en `docs/IDEA_FUTURA_PRONOSTICO.txt`.
 
-Fecha de referencia provisional: egreso. Geografía: residencia simulada. El filtro de diagnóstico solo modifica el numerador respiratorio del porcentaje. Estas definiciones deben validarse antes de conectar datos reales.
+Fecha de referencia provisional: egreso. Geografía: atención simulada. El filtro de diagnóstico solo modifica el numerador respiratorio del porcentaje. Estas definiciones deben validarse antes de conectar datos reales.
 
 ## Organización
 
@@ -62,3 +62,5 @@ Todo el trabajo de frontend se mantiene dentro de esta carpeta. La limpieza real
 React y TypeScript para componentes y contratos; Vite para desarrollo/compilación; Recharts para el gráfico mensual; Lucide para iconos. CSS propio, sin framework visual, sin servidor de datos simulado y sin biblioteca global de estado.
 
 Catálogo territorial, simulación comunal y evaluación por horizonte: `docs/COMUNAS_Y_HORIZONTES.md`.
+
+Contratos de selección múltiple, geometrías, gráficos y vacunación: [CONTRATOS_Y_MAPA_COMUNAL.md](docs/CONTRATOS_Y_MAPA_COMUNAL.md). La actividad logística está en un desplegable académico cerrado inicialmente.

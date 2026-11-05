@@ -6,6 +6,8 @@ export interface Filters {
   endDate: string;
   region: string;
   commune: string;
+  /** Selección múltiple por códigos CUT; vacía = sin restricción adicional. */
+  communes?: string[];
   age: AgeGroup;
   sex: 'all' | Sex;
   diagnosis: string;
@@ -64,11 +66,13 @@ export interface Overview {
   monthly: TimePoint[];
   diagnoses: CategoryValue[];
   territories: CategoryValue[];
+  communes: CategoryValue[];
   regionalMonthly: { id: string; label: string; points: TimePoint[] }[];
   demographics: { age: CategoryValue[]; sex: CategoryValue[] };
   meta: SourceMetadata;
 }
 export interface DashboardService {
+  getVaccination(query: import('./vaccination.ts').VaccinationQuery, signal?: AbortSignal): Promise<import('./vaccination.ts').VaccinationResponse>;
   getFilterOptions(signal?: AbortSignal): Promise<FilterOptions>;
   getOverview(filters: Filters, signal?: AbortSignal): Promise<Overview>;
   getLogisticPreview(filters: Filters, horizon: number, signal?: AbortSignal): Promise<import('./logistic.ts').LogisticPreview>;

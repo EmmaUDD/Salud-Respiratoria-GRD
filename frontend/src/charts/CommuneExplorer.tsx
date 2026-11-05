@@ -1,0 +1,34 @@
+import { useState } from 'react';
+import geometry from '../assets/commune-map.json';
+import type { CategoryValue, FilterOptions } from '../types/dashboard.ts';
+import { number } from '../utils/format.ts';
+
+const normalize = (s:string) => s.normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase();
+export function CommuneExplorer({options,values,selected,onChange,region,onRegion}:{options:FilterOptions;values:CategoryValue[];selected:string[];onChange:(ids:string[])=>void;region:string;onRegion:(id:string)=>void}) {
+  const [search,setSearch]=useState('');
+  const [zoom,setZoom]=useState(1);
+  const [focus,setFocus]=useState<string|null>(null);
+  const shapes=(geometry as Record<string,{id:string;d:string}[]>)[region] ?? [];
+  const communes=options.communes.filter(c=>c.region===region);
+  const allSelected=communes.length>0 && communes.every(c=>selected.includes(c.id));
+  const toggleRegion=()=>onChange(allSelected?selected.filter(id=>!communes.some(c=>c.id===id)):[...new Set([...selected,...communes.map(c=>c.id)])]);
+  const matches=communes.filter(c=>normalize(c.label).includes(normalize(search)));
+  const maximum=Math.max(1,...values.filter(v=>communes.some(c=>c.id===v.id)).map(v=>v.value));
+  const value=(id:string)=>values.find(v=>v.id===id);
+  const toggle=(id:string)=>onChange(selected.includes(id)?selected.filter(c=>c!==id):[...selected,id]);
+  const label=(id:string)=>options.communes.find(c=>c.id===id)?.label ?? id;
+  const detail=(id:string)=>value(id)?`${number(value(id)!.value)} hospitalizaciones ficticias`:'Fuera de los filtros activos; puedes agregarla';
+  return <div className="commune-explorer" key={region}>
+    <div className="commune-toolbar"><label>Región para explorar<select aria-label="Región para explorar" value={region} onChange={e=>{onRegion(e.target.value);setSearch('');setZoom(1);setFocus(null);}}>{options.regions.map(r=><option key={r.id} value={r.id}>{r.label}</option>)}</select></label><label>Buscar comuna<input aria-label="Buscar comuna" type="search" value={search} onChange={e=>setSearch(e.target.value)} placeholder="Ej.: Puente Alto"/></label><div className="commune-zoom"><button className="button" aria-label="Alejar mapa comunal" disabled={zoom===1} onClick={()=>setZoom(z=>Math.max(1,z-1))}>−</button><span>{zoom}×</span><button className="button" aria-label="Ampliar mapa comunal" disabled={zoom===4} onClick={()=>setZoom(z=>Math.min(4,z+1))}>+</button></div></div>
+    <div className="commune-bulk"><button className="button" type="button" aria-pressed={allSelected} onClick={toggleRegion} title="Incluye todas las comunas de esta región, aunque exista una búsqueda activa; conserva las de otras regiones.">{allSelected?'Quitar todas las comunas de esta región':'Seleccionar todas las comunas de esta región'}</button><span role="status">{communes.filter(c=>selected.includes(c.id)).length} de {communes.length} seleccionadas</span></div>
+    <p className="fine-print">Cambiar la región de exploración solo cambia este mapa. Seleccionar una comuna filtra todos los gráficos de hospitalizaciones y conserva las comunas que ya agregaste.</p>
+    <div className="commune-layout"><div><div className="map-status" role="status"><strong>{focus?label(focus):options.regions.find(r=>r.id===region)?.label}</strong><span>{focus?detail(focus):`${communes.length} comunas · selecciona en el mapa o en la lista`}</span></div><div className="commune-canvas" tabIndex={0} aria-label="Mapa comunal ampliable; usa las barras de desplazamiento al ampliar"><svg viewBox="0 0 700 540" style={{width:`${zoom*100}%`,height:`${zoom*100}%`}} preserveAspectRatio="xMidYMid meet" role="group" aria-label={`Comunas de ${options.regions.find(r=>r.id===region)?.label}`}>
+      {region==='05'&&<g aria-hidden="true"><rect x="15" y="397" width="150" height="130" rx="8" fill="white" stroke="#ccdce6"/><text x="25" y="416" fontSize="12" fill="#153B50">Juan Fernández</text><text x="25" y="520" fontSize="10" fill="#657788">Recuadro · otra escala</text></g>}
+      {region==='05'&&<g role="button" tabIndex={0} aria-label="Seleccionar comuna insular Juan Fernández" aria-pressed={selected.includes('05104')} onClick={()=>toggle('05104')} onKeyDown={e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();toggle('05104');}}}><rect x="28" y="443" width="123" height="40" rx="6" fill={selected.includes('05104')?'#21A69A':'#2876A8'}/><text x="40" y="468" fontSize="12" fill="white">Elegir comuna</text></g>}
+      {shapes.filter(s=>matches.some(c=>c.id===s.id)).map(s=><path key={s.id} d={s.d} fillRule="evenodd" fill={selected.includes(s.id)?'#21A69A':value(s.id)?`rgba(40,118,168,${.15+.75*value(s.id)!.value/maximum})`:'#e8edf0'} stroke={selected.includes(s.id)?'#153B50':'white'} strokeWidth={selected.includes(s.id)?2:.7} role="button" tabIndex={0} aria-pressed={selected.includes(s.id)} aria-label={`${label(s.id)}: ${detail(s.id)}`} onMouseEnter={()=>setFocus(s.id)} onMouseLeave={()=>setFocus(null)} onFocus={()=>setFocus(s.id)} onBlur={()=>setFocus(null)} onClick={()=>toggle(s.id)} onKeyDown={e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();toggle(s.id);}}}><title>{label(s.id)} · {detail(s.id)}</title></path>)}
+    </svg></div><p className="fine-print">Azul: conteo de eventos; turquesa y borde: comuna seleccionada; gris: fuera de la consulta. Cero es un conteo válido. Geometría referencial de <a href="https://github.com/caracena/chile-geojson" target="_blank" rel="noreferrer">Chile GeoJSON</a>, pendiente de validación territorial. Valparaíso continental se amplía y Juan Fernández aparece en un recuadro a otra escala. Rapa Nui y Antártica se seleccionan desde la lista cuando no hay polígono en esta vista.</p></div>
+    <div className="commune-results"><strong>{matches.length} comunas encontradas</strong><div className="commune-list">{matches.map(c=><button key={c.id} aria-pressed={selected.includes(c.id)} onClick={()=>toggle(c.id)} onMouseEnter={()=>setFocus(c.id)} onMouseLeave={()=>setFocus(null)}><span>{selected.includes(c.id)?'✓ ':''}{c.label}<small>{c.id}{!shapes.some(s=>s.id===c.id)?' · sin polígono':''}</small></span><strong>{value(c.id)?number(value(c.id)!.value):'—'}</strong></button>)}{!matches.length&&<p>No hay comunas con ese nombre en esta región.</p>}</div></div></div>
+    <div className="commune-selection"><strong>{selected.length?`${selected.length} comunas en la consulta`:'Sin selección múltiple · se conservan los filtros generales'}</strong><div>{selected.map(id=><button className="filter-chip" key={id} aria-label={`Quitar comuna ${label(id)}`} onClick={()=>toggle(id)}>{label(id)} ×</button>)}</div>{selected.length>0&&<button className="button" onClick={()=>onChange([])}>Quitar selección de comunas</button>}</div>
+    <p className="fine-print">Territorio de atención simulado. En GRD se obtendrá desde COD_HOSPITAL; no identifica dónde vive la persona. Conteos sin ajuste por población.</p>
+  </div>;
+}

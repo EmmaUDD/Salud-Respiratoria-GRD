@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Activity, ArrowUpRight, BookOpen, CalendarDays, CircleHelp, FlaskConical, LayoutDashboard, Leaf, MapPinned, Menu, Users, X } from 'lucide-react';
+import { Activity, ArrowUpRight, BookOpen, CalendarDays, CircleHelp, FlaskConical, LayoutDashboard, Syringe, MapPinned, Menu, Users, X } from 'lucide-react';
 import type { FilterOptions, Filters, Overview } from '../types/dashboard.ts';
 import { dashboardService } from '../services/index.ts';
 import { FilterBar } from '../components/FilterBar.tsx';
@@ -18,7 +18,7 @@ const navigation = [
   { id: 'territory', label: 'Territorio', icon: MapPinned },
   { id: 'time', label: 'Evolución temporal', icon: CalendarDays },
   { id: 'profile', label: 'Perfil y patologías', icon: Users },
-  { id: 'environment', label: 'Ambiente y vacunación', icon: Leaf },
+  { id: 'environment', label: 'Vacunación respiratoria', icon: Syringe },
   { id: 'methodology', label: 'Metodología y fuentes', icon: BookOpen },
 ] as const;
 function readView(): View { const hash = location.hash.slice(1); return navigation.some(n => n.id === hash) ? hash as View : 'overview'; }
@@ -69,12 +69,12 @@ export default function App() {
       <header className="topbar"><div className="topbar-left"><button className="icon-button mobile-menu" aria-label={menuOpen ? 'Cerrar navegación' : 'Abrir navegación'} aria-expanded={menuOpen} onClick={() => setMenuOpen(!menuOpen)}>{menuOpen ? <X size={22} /> : <Menu size={22} />}</button><span className="breadcrumb">Surviral<span>/</span><strong>Explorador respiratorio</strong></span></div><div className="topbar-right"><span className="demo-badge"><FlaskConical size={14} />Datos simulados</span><button className="icon-button help-button" aria-label="Consultar metodología y fuentes" onClick={() => go('methodology')}><CircleHelp size={20} /></button></div></header>
       <main id="main-content" className="main-content">
         <div className="page-heading"><div><span className="eyebrow">HOSPITALIZACIONES RESPIRATORIAS EN CHILE</span><h1>{title}</h1><p>{question}</p></div><button className="button heading-method" onClick={() => go(view === 'methodology' ? 'overview' : 'methodology')}>{view === 'methodology' ? 'Volver al panorama' : 'Acerca de los datos'}<ArrowUpRight size={16} /></button></div>
-        <div className="demo-notice"><FlaskConical size={18} /><p><strong>Modelo en desarrollo.</strong></p></div>
+        <div className="demo-notice"><FlaskConical size={18} /><p><strong>Demostración con datos ficticios.</strong> Las cifras de hospitalizaciones no son resultados GRD ni evidencia sanitaria. Vacunación todavía no está integrada.</p></div>
         {view !== 'methodology' && view !== 'environment' ? <>
           {options && <FilterBar filters={filters} options={options} onChange={setFilters} reset={reset} />}
-          {optionsError ? <ErrorState message={optionsError} retry={() => setAttempt(attempt + 1)} /> : request.status === 'loading' || !options ? <LoadingState /> : request.status === 'error' ? <ErrorState message={request.message} retry={() => setAttempt(attempt + 1)} /> : view === 'overview' ? <OverviewScreen data={request.data} reset={reset} methodology={() => go('methodology')} regions={options.regions} onRegion={region => setFilters(f => ({...f,region,commune: 'all'}))} /> : <ExploreScreen horizon={forecastHorizon} onHorizon={setForecastHorizon} view={view} data={request.data} options={options} onRegion={region => setFilters(f=>({...f,region,commune: 'all'}))} reset={reset}/>}
+          {optionsError ? <ErrorState message={optionsError} retry={() => setAttempt(attempt + 1)} /> : request.status === 'loading' || !options ? <LoadingState /> : request.status === 'error' ? <ErrorState message={request.message} retry={() => setAttempt(attempt + 1)} /> : view === 'overview' ? <OverviewScreen data={request.data} reset={reset} methodology={() => go('methodology')} regions={options.regions} onRegion={region => setFilters(f => ({...f,region,commune: 'all', communes: []}))} /> : <ExploreScreen onCommunes={communes => setFilters(f => ({...f,region:'all',commune:'all',communes}))} horizon={forecastHorizon} onHorizon={setForecastHorizon} view={view} data={request.data} options={options} onRegion={region => setFilters(f=>({...f,region,commune: 'all', communes: []}))} reset={reset}/>}
         </> : view === 'methodology' ? <MethodologyScreen /> : <EnvironmentScreen />}
-        <footer className="page-footer"><span>Surviral · Análisis de Datos e Inferencia Estadística</span><span>2019–2024 · cobertura de demostración</span></footer>
+        <footer className="page-footer"><span>Surviral · Análisis de Datos e Inferencia Estadística</span><span>{view === 'environment' ? 'Vacunación · demostración 2024–2025' : 'Hospitalizaciones · demostración 2019–2024'}</span></footer>
       </main>
     </div>
   </div>;
