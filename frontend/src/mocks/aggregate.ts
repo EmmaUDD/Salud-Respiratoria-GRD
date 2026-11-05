@@ -1,3 +1,4 @@
+import { ageBands } from '../utils/ages.ts';
 import type { AgeGroup, CategoryValue, Filters, Measure, Overview, TimePoint } from '../types/dashboard.ts';
 import { events, filterOptions, type SimulatedEvent } from './data.ts';
 
@@ -5,7 +6,8 @@ export function matchesAge(age: number | null, group: AgeGroup): boolean {
   if (group === 'all') return true;
   if (group === 'unknown') return age === null;
   if (age === null) return false;
-  return group === 'under18' ? age < 18 : group === '65plus' ? age >= 65 : age >= 18 && age < 65;
+  const band = ageBands.find(b => b.id === group);
+  return !!band && age >= band.min && age <= band.max;
 }
 
 export function validateFilters(f: Filters): void {
@@ -75,15 +77,15 @@ export function summarize(filters: Filters, source: readonly SimulatedEvent[] = 
       sex: distribution(filterOptions.sexes, (e, id) => e.sex === id),
     },
     meta: {
-      mode: 'simulated', source: 'Conjunto de demostración Surviral; no contiene registros GRD reales', version: 'demo-2-comunas', updatedAt: '2026-10-29',
+      mode: 'simulated', source: 'Conjunto de demostración Surviral; no contiene registros GRD reales', version: 'demo-3-tramos-2025', updatedAt: '2026-11-04',
       minDate: filterOptions.minDate, maxDate: filterOptions.maxDate,
-      territorialBasis: 'residencia_simulada', temporalBasis: 'discharge',
+      territorialBasis: 'atencion_simulada', temporalBasis: 'discharge',
       definition: 'Eventos ficticios de hospitalización con diagnóstico principal agrupado para la demostración. Fecha de referencia: egreso. Definiciones reales pendientes de validación.',
       appliedFilters: { ...filters }, respiratoryTotal: selected.length, universeTotal: universe.length,
       missingStay: selected.length - stays.length,
       unknownAge: selected.filter(e => e.age === null).length,
       unknownSex: selected.filter(e => e.sex === 'unknown').length,
-      warnings: ['Cobertura 2019–2024 exclusivamente simulada; la cobertura real de cada año no está validada.', 'Región de residencia ficticia; no implica que la variable territorial GRD real tenga este significado.'],
+      warnings: ['Cobertura 2019–2024 exclusivamente simulada; la cobertura real de cada año no está validada.', 'Territorio de atención ficticio; la futura asignación por hospital requiere un catálogo validado y no identifica la residencia.'],
     },
   };
 }

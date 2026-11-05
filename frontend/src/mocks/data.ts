@@ -1,3 +1,4 @@
+import { ageBands } from '../utils/ages.ts';
 import type { FilterOptions, Option, Sex } from '../types/dashboard.ts';
 import communeCatalog from '../assets/communes.json' with { type: 'json' };
 export const communes = communeCatalog;
@@ -34,12 +35,7 @@ export const diagnoses: Option[] = [
 export const filterOptions: FilterOptions = {
   minDate: '2019-01-01', maxDate: '2024-12-31', years: [2019, 2020, 2021, 2022, 2023, 2024],
   regions, communes,
-  ages: [
-    { id: 'under18', label: 'Menores de 18 años' },
-    { id: '18to64', label: '18–64 años' },
-    { id: '65plus', label: '65 años o más' },
-    { id: 'unknown', label: 'Edad desconocida' },
-  ],
+  ages: [...ageBands.map(({ id, label }) => ({ id, label })), { id: 'unknown', label: 'Edad desconocida' }],
   sexes: [{ id: 'female', label: 'Femenino' }, { id: 'male', label: 'Masculino' }, { id: 'unknown', label: 'Sexo desconocido' }],
   diagnoses,
 };
