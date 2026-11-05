@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { summarize, validateFilters } from '../src/mocks/aggregate.ts';
+import { matchesAge, summarize, validateFilters } from '../src/mocks/aggregate.ts';
 import { events, filterOptions, type SimulatedEvent } from '../src/mocks/data.ts';
 import { defaultFilters } from '../src/app/defaults.ts';
 import { mockService } from '../src/services/mockService.ts';
@@ -22,8 +22,8 @@ test('Las particiones reconcilian con el indicador en los seis años y dieciséi
 
 test('Los filtros personales y diagnósticos producen una selección consistente', () => {
   const all = summarize(defaultFilters);
-  for (const age of ['under18', '18to64', '65plus', 'unknown'] as const) {
-    const data = summarize({ ...defaultFilters, age });
+  for (const { id: age } of filterOptions.ages) {
+    const data = summarize({ ...defaultFilters, age: age as typeof defaultFilters.age });
     assert.ok(data.meta.respiratoryTotal < all.meta.respiratoryTotal);
     assert.equal(data.demographics.age.find(x => x.id === age)?.value, data.meta.respiratoryTotal);
   }
@@ -109,4 +109,19 @@ test('Catálogo comunal, coherencia de región/comuna y reconciliación con los 
   assert.throws(()=>validateFilters({...defaultFilters,region:'01',commune:'13101'}));
   assert.throws(()=>validateFilters({...defaultFilters,commune:'13101'}));
   assert.throws(()=>validateFilters({...defaultFilters,region:'13',commune:'fake'}));
+});
+
+
+test('Los tramos quinquenales cubren sin solapamientos los límites de edad 2025', () => {
+  for (let age = 0; age <= 109; age++) {
+    const groups = filterOptions.ages.filter(g => matchesAge(age, g.id as typeof defaultFilters.age));
+    assert.equal(groups.length, 1, `Edad ${age}`);
+    assert.equal(groups[0].id, `${Math.floor(age / 5) * 5}to${Math.floor(age / 5) * 5 + 4}`);
+  }
+  assert.equal(matchesAge(null, 'unknown'), true);
+  assert.equal(matchesAge(null, '0to4'), false);
+  assert.equal(matchesAge(19, '15to19'), true);
+  assert.equal(matchesAge(20, '15to19'), false);
+  const total = filterOptions.ages.reduce((sum, group) => sum + summarize({ ...defaultFilters, age: group.id as typeof defaultFilters.age }).meta.respiratoryTotal, 0);
+  assert.equal(total, summarize(defaultFilters).meta.respiratoryTotal);
 });

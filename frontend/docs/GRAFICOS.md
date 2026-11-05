@@ -30,7 +30,7 @@ Hospitalizaciones: número de eventos. Proporción: eventos respiratorios selecc
 ## Distribución territorial y mapa de calor
 
 - Pregunta: ¿cómo se distribuyen las hospitalizaciones por región y mes?
-- Variables: región de residencia simulada, mes del egreso y conteo. Unidad: eventos, nunca tasas poblacionales.
+- Variables: región de atención simulada, mes del egreso y conteo. Unidad: eventos, nunca tasas poblacionales.
 - Período y filtros: rango activo, edad, sexo y diagnóstico. La selección del mapa modifica el mismo filtro regional que el selector.
 - Lectura: intensidad de color proporcional al número de eventos de la selección. No permite comparar riesgo poblacional.
 - Ausentes: regiones fuera de selección aparecen grises y con raya; no son cero. El mapa de calor indica meses parciales con asterisco; nulos con raya. Una celda con cobertura y sin eventos muestra 0.
@@ -54,3 +54,11 @@ Hospitalizaciones: número de eventos. Proporción: eventos respiratorios selecc
 - Ausentes: categorías desconocidas explícitas. Con selección vacía se muestran conteos 0 y porcentajes no calculables.
 
 Ambiente y vacunas permanecen sin gráficos hasta validar fuentes compatibles. Se muestran su disponibilidad y las condiciones de integración. No se muestran tasas poblacionales ni mortalidad sin definiciones y datos adecuados.
+
+
+### Edad, actualización 2025
+Pregunta: ¿cómo se distribuyen las hospitalizaciones entre los tramos de edad registrados?
+Variable: tramo categórico ordinal; unidad: eventos con egreso en el período seleccionado.
+Filtros: período, territorio de atención, tramo, sexo y diagnóstico.
+Se usan barras horizontales con eje desde cero, orden natural 0–4 hasta 105–109 y desconocido al final. No ordenar edades por frecuencia ni usar una torta de 23 categorías. Tabla desplegable con valores y porcentajes de la misma selección.
+Un cero disponible se dibuja como cero; desconocido se conserva como categoría. La futura falta de cobertura debe informarse como no disponible, nunca como cero. No reconstruir edades exactas a partir de tramos. Las cifras actuales son ficticias.
