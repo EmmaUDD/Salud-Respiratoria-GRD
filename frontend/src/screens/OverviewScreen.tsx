@@ -29,7 +29,7 @@ export function OverviewScreen({ data, reset, methodology, regions, onRegion }: 
         <DiagnosisBars values={data.diagnoses} total={meta.respiratoryTotal} />
       </Panel>
         <Panel title="Contexto de la consulta" subtitle="Qué representan estas cifras">
-          <dl className="context-list"><div><dt>Universo seleccionado</dt><dd>{number(meta.universeTotal)} egresos ficticios</dd></div><div><dt>Período aplicado</dt><dd>{dateLabel(meta.appliedFilters.startDate)} — {dateLabel(meta.appliedFilters.endDate)}</dd></div><div><dt>Referencia territorial</dt><dd>Región de residencia simulada</dd></div><div><dt>Datos demográficos ausentes*</dt><dd>Edad: {number(meta.unknownAge)} · sexo: {number(meta.unknownSex)}</dd></div></dl>
+          <dl className="context-list"><div><dt>Universo seleccionado</dt><dd>{number(meta.universeTotal)} egresos ficticios</dd></div><div><dt>Período aplicado</dt><dd>{dateLabel(meta.appliedFilters.startDate)} — {dateLabel(meta.appliedFilters.endDate)}</dd></div><div><dt>Referencia territorial</dt><dd>Región de atención simulada</dd></div><div><dt>Datos demográficos ausentes*</dt><dd>Edad: {number(meta.unknownAge)} · sexo: {number(meta.unknownSex)}</dd></div></dl>
           <p className="fine-print">*En los eventos respiratorios de la selección. Las categorías desconocidas se conservan cuando el filtro las incluye.</p>
           <button className="text-button context-link" onClick={methodology}>Consultar definiciones y cobertura<ArrowRight size={15} /></button>
         </Panel>

@@ -1,6 +1,6 @@
 /** Contratos provisionales: requieren validación con el equipo de datos. */
 export type Sex = 'female' | 'male' | 'unknown';
-export type AgeGroup = 'all' | 'under18' | '18to64' | '65plus' | 'unknown';
+export type AgeGroup = 'all' | '0to4' | '5to9' | '10to14' | '15to19' | '20to24' | '25to29' | '30to34' | '35to39' | '40to44' | '45to49' | '50to54' | '55to59' | '60to64' | '65to69' | '70to74' | '75to79' | '80to84' | '85to89' | '90to94' | '95to99' | '100to104' | '105to109' | 'unknown';
 export interface Filters {
   startDate: string;
   endDate: string;
@@ -47,7 +47,7 @@ export interface SourceMetadata {
   updatedAt: string;
   minDate: string;
   maxDate: string;
-  territorialBasis: 'residencia_simulada' | 'residencia' | 'atencion';
+  territorialBasis: 'residencia_simulada' | 'atencion_simulada' | 'residencia' | 'atencion';
   temporalBasis: 'discharge' | 'admission';
   definition: string;
   appliedFilters: Filters;
