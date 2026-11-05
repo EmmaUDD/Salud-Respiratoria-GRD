@@ -5,3 +5,4 @@ dist/
 .qa/
 *.tsbuildinfo
 docs/
+presentacion/

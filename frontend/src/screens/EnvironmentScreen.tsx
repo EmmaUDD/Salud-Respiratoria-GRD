@@ -1,3 +1,4 @@
+import { isRealData } from '../services/sourceMode.ts';
 import { useEffect, useState } from 'react';
 import { CartesianGrid, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
 import { Panel } from '../components/Panel.tsx';
@@ -8,6 +9,9 @@ import type { FilterOptions } from '../types/dashboard.ts';
 import { number, monthLabel } from '../utils/format.ts';
 
 export function EnvironmentScreen() {
+  return isRealData ? <div className="explore-stack"><Panel title="Vacunación: integración pendiente de compatibilidad" subtitle="No se mezclan dosis o coberturas con hospitalizaciones hasta validar las bases."><p>Hay exportaciones regionales de influenza 2024–2025 y tablas comunales programáticas de 2019–2020. Confirmar vacuna, dosis, campaña, fecha de corte y población objetivo.</p><p>GRD utiliza comuna del hospital. Vacunación por residencia o lugar de administración no representa necesariamente la misma población. No se muestran correlaciones ni eficacia individual.</p><p>La proporción o tasa solo se calculará con numerador y denominador compatibles. Los archivos originales permanecen sin cambios.</p></Panel></div> : <VaccinationDemo/>;
+}
+function VaccinationDemo() {
   const [query,setQuery]=useState<VaccinationQuery>({campaign:2024,region:'all'});
   const [state,setState]=useState<{data?:VaccinationResponse;error?:string}>({});
   const [options,setOptions]=useState<FilterOptions|null>(null);

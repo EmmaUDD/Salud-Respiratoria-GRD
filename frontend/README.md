@@ -1,6 +1,6 @@
 # Frontend de Surviral
 
-Explorador de hospitalizaciones respiratorias con vistas territoriales, temporales, demográficas y de vacunación. Todas las cifras son ficticias; cada área usa una fuente determinista y sus gráficos reconcilian entre sí. No se leen los archivos GRD del repositorio.
+Explorador de hospitalizaciones respiratorias con vistas territoriales, temporales, demográficas y de vacunación. Admite datos simulados y GRD real agregado. En esta instalación se activó VITE_DATA_SOURCE=real; React no lee los TXT originales ni recibe identificadores de beneficiario.
 
 ## Ejecutar en tu computador
 
@@ -64,3 +64,9 @@ React y TypeScript para componentes y contratos; Vite para desarrollo/compilaci�
 Catálogo territorial, simulación comunal y evaluación por horizonte: `docs/COMUNAS_Y_HORIZONTES.md`.
 
 Contratos de selección múltiple, geometrías, gráficos y vacunación: [CONTRATOS_Y_MAPA_COMUNAL.md](docs/CONTRATOS_Y_MAPA_COMUNAL.md). La actividad logística está en un desplegable académico cerrado inicialmente.
+
+## Datos GRD reales locales
+
+Desde la raíz del repositorio ejecuta `python Procesamiento/exportar_dashboard.py` (pandas, numpy, openpyxl). Genera las tablas y auditoría en `GRD_CIE_TM/GRD_limpio/v1` y el agregado de interfaz en `frontend/public/data/grd-cube.json`. `.env.local` selecciona `VITE_DATA_SOURCE=real`; reinicia Vite tras cambiarlo. Para volver a la demostración usa `mock`. Los artefactos generados y `.env.local` no se incluyen en Git.
+
+La versión v1 incluye hospitalización y hospitalización en urgencia, utiliza fecha de alta y deja la proporción entre todos los egresos no disponible. Vacunación no se mezcla y el modelo logístico simulado se oculta en modo real. Reglas, exclusiones y límites territoriales: `../Procesamiento/EXPORTACION_DASHBOARD.md`.

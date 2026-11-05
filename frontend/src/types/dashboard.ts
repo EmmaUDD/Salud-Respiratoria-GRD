@@ -26,7 +26,7 @@ export interface FilterOptions {
 export interface Measure {
   value: number | null;
   status: 'available' | 'unavailable';
-  reason?: 'zero_denominator' | 'no_events' | 'missing_values';
+  reason?: 'missing_denominator' | 'zero_denominator' | 'no_events' | 'missing_values';
   unit: 'events' | 'percent' | 'days';
   validCount: number;
 }

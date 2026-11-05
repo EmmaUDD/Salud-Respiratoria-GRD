@@ -1,3 +1,4 @@
+import { isRealData } from '../services/sourceMode.ts';
 import { CartesianGrid, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
 import { Download, Table2 } from 'lucide-react';
 import type { TimePoint } from '../types/dashboard.ts';
@@ -18,7 +19,7 @@ export function MonthlyChart({ points }: { points: TimePoint[] }) {
         </LineChart>
       </ResponsiveContainer>
     </div>
-    <div className="chart-bottom"><span><i className="line-swatch" />Hospitalizaciones respiratorias · datos ficticios</span>{points.some(p => p.partial) && <span className="partial-note">El rango incluye meses parciales</span>}</div>
-    <div className="chart-tools"><details><summary><Table2 size={15} />Ver datos del gráfico</summary><div className="table-wrap"><table><caption>Serie mensual simulada. Mes del egreso; un mes parcial solo incluye los días seleccionados.</caption><thead><tr><th>Mes</th><th>Eventos</th><th>Período</th></tr></thead><tbody>{points.map(p => <tr key={p.period}><th scope="row">{monthLabel(p.period, true)}</th><td>{p.value === null ? 'No disponible' : number(p.value)}</td><td>{p.partial ? 'Parcial' : 'Completo'}</td></tr>)}</tbody></table></div></details><button className="text-button" onClick={() => downloadCsv([['DATOS SIMULADOS — no son resultados del proyecto'], ['Mes de egreso', 'Eventos', 'Período'], ...points.map(p => [p.period, p.value === null ? 'No disponible' : String(p.value), p.partial ? 'Parcial' : 'Completo'])], 'surviral-serie-SIMULADA.csv')}><Download size={14} />Descargar serie</button></div>
+    <div className="chart-bottom"><span><i className="line-swatch" />Hospitalizaciones respiratorias · {isRealData?'GRD local':'datos ficticios'}</span>{points.some(p => p.partial) && <span className="partial-note">El rango incluye meses parciales</span>}</div>
+    <div className="chart-tools"><details><summary><Table2 size={15} />Ver datos del gráfico</summary><div className="table-wrap"><table><caption>{isRealData?'Serie mensual GRD.':'Serie mensual simulada.'} Mes del egreso; un mes parcial solo incluye los días seleccionados.</caption><thead><tr><th>Mes</th><th>Eventos</th><th>Período</th></tr></thead><tbody>{points.map(p => <tr key={p.period}><th scope="row">{monthLabel(p.period, true)}</th><td>{p.value === null ? 'No disponible' : number(p.value)}</td><td>{p.partial ? 'Parcial' : 'Completo'}</td></tr>)}</tbody></table></div></details><button className="text-button" onClick={() => downloadCsv([[isRealData?'GRD local — universo hospitalario definido':'DATOS SIMULADOS — no son resultados del proyecto'], ['Mes de egreso', 'Eventos', 'Período'], ...points.map(p => [p.period, p.value === null ? 'No disponible' : String(p.value), p.partial ? 'Parcial' : 'Completo'])], isRealData?'surviral-serie-GRD.csv':'surviral-serie-SIMULADA.csv')}><Download size={14} />Descargar serie</button></div>
   </>;
 }
